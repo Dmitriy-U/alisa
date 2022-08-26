@@ -33,8 +33,6 @@ def alisa_command_handler():
 
     if command in command_list:
         # Существующая команда
-        response['response']['buttons'] = get_suggests()
-        response['response']['text'] = f'Хорошо {commands[command]}'
         if command == "красный":
             mqtt_client_instance.publish(
                 MQTT_TOPIC,
@@ -67,6 +65,8 @@ def alisa_command_handler():
                     }
                 })
             )
+        response['response']['buttons'] = get_suggests()
+        response['response']['text'] = f'Хорошо {commands[command]}'
         response['response']['end_session'] = True
         return make_response(response, 200)
 
