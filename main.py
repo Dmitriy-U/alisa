@@ -51,6 +51,22 @@ def alisa_command_handler():
                     }
                 })
             )
+        if command == "зелёный":
+            mqtt_client_instance.publish(
+                MQTT_TOPIC,
+                json.dumps({
+                    "fito": 0,
+                    "light": {
+                        "brightness": 0,
+                        "temperature": 0
+                    },
+                    "rgb": {
+                        "red": 0,
+                        "green": 255,
+                        "blue": 0
+                    }
+                })
+            )
         response['response']['end_session'] = True
         return make_response(response, 200)
 
