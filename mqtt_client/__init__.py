@@ -10,3 +10,5 @@ mqtt_client_instance.connect(
     port=MQTT_PORT,
     keepalive=60
 )
+
+__all__ = ['mqtt_client_instance']

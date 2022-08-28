@@ -1,4 +1,4 @@
-from commands import COMMAND_RED, COMMAND_YELLOW, COMMAND_GREEN, COMMAND_BLUE
+from commands import COMMAND_RED, COMMAND_YELLOW, COMMAND_GREEN, COMMAND_BLUE, COMMAND_OFF, COMMAND_ON
 
 DEFAULT_SETTING_LIGHT = {
     "brightness": 0,
@@ -24,6 +24,46 @@ RGB_SETTING_BY_COMMAND = {
     COMMAND_BLUE: {**DEFAULT_SETTING_RGB, "blue": 255},
 }
 
+LIGHT_SETTING_BY_COMMAND = {
+    COMMAND_ON: {**DEFAULT_SETTING_LIGHT, "brightness": 100},
+    COMMAND_OFF: {**DEFAULT_SETTING_LIGHT, "brightness": 0},
+}
 
-def get_rgb_setting_by_command(command: str):
+
+def get_rgb_setting_by_command(command: str) -> dict:
+    """
+    Получить конфигурацию для установки цвета
+
+    Parameters
+    ----------
+    command : str
+        команда
+
+    Returns
+    -------
+    dict
+        конфигурация цвета
+    """
+
     return RGB_SETTING_BY_COMMAND[command]
+
+
+def get_light_setting_by_command(command: str) -> dict:
+    """
+    Получить конфигурацию для включения/выключения
+
+    Parameters
+    ----------
+    command : str
+        команда
+
+    Returns
+    -------
+    dict
+        конфигурация светимости
+    """
+
+    return LIGHT_SETTING_BY_COMMAND[command]
+
+
+__all__ = ['get_rgb_setting_by_command', 'get_light_setting_by_command', 'DEFAULT_SETTING']

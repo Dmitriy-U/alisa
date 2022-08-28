@@ -3,10 +3,11 @@ import json
 from flask import Flask, request, make_response
 from flask_cors import CORS
 
-from commands import UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command
 from config import MQTT_TOPIC
 from mqtt_client import mqtt_client_instance
-from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command
+from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command
+from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
+                      is_color_command, is_switch_command, )
 
 app = Flask(__name__)
 CORS(app)
@@ -32,9 +33,11 @@ def alisa_command_handler():
     utterance = payload['request']['original_utterance'].lower()
 
     if utterance in UTTERANCE_LIST:
+        # обработка существующей команды
         command = get_command_by_utterance(utterance)
-        # Существующая команда
-        if utterance == "красный":
+
+        if is_color_command(command):
+            # установка цвета
             mqtt_client_instance.publish(
                 MQTT_TOPIC,
                 json.dumps({
@@ -42,18 +45,22 @@ def alisa_command_handler():
                     "rgb": get_rgb_setting_by_command(command)
                 })
             )
-        if utterance == "зелёный":
+
+        if is_switch_command(command):
+            # включение/выключение
             mqtt_client_instance.publish(
                 MQTT_TOPIC,
                 json.dumps({
                     **DEFAULT_SETTING,
-                    "rgb": get_rgb_setting_by_command(command)
+                    "light": get_light_setting_by_command(command)
                 })
             )
+
         response['response']['text'] = f'Хорошо, {get_success_answer_by_command(command)}.'
         response['response']['end_session'] = True
         return make_response(response, 200)
 
+    # обработка несуществующей команды
     response['response']['buttons'] = get_suggests()
     response['response']['text'] = 'Не могу понять. Владик помоги!'
     return make_response(response, 200)
