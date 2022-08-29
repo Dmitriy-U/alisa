@@ -12,9 +12,23 @@ from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, ge
 app = Flask(__name__)
 CORS(app)
 
+state = {}
+
+
+def on_message(client, userdata, message):
+    """Обработчик сообщений"""
+
+    global state
+    state = json.loads(message.payload.decode("utf-8"))
+
+
+mqtt_client_instance.on_message = on_message
+
 
 @app.route("/", methods=["POST", "GET"])
 def alisa_command_handler():
+    global state
+
     response = {
         "version": request.json['version'],
         "session": request.json['session'],
