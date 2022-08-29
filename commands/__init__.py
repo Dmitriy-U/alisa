@@ -1,5 +1,6 @@
 COMMAND_ON = "on"
 COMMAND_OFF = "off"
+COMMAND_INFO = "info"
 COMMAND_RED = "red"
 COMMAND_YELLOW = "yellow"
 COMMAND_GREEN = "green"
@@ -10,6 +11,10 @@ COMMANDS_SWITCH = {
     "выключи": COMMAND_OFF,
 }
 
+COMMANDS_INFO = {
+    "состояние": COMMAND_INFO,
+}
+
 COMMANDS_COLOR = {
     "красный": COMMAND_RED,
     "желтый": COMMAND_YELLOW,
@@ -17,7 +22,7 @@ COMMANDS_COLOR = {
     "синий": COMMAND_BLUE,
 }
 
-COMMANDS = {**COMMANDS_SWITCH, **COMMANDS_COLOR}
+COMMANDS = {**COMMANDS_SWITCH, **COMMANDS_INFO, **COMMANDS_COLOR}
 
 UTTERANCE_LIST = list(COMMANDS.keys())
 
@@ -119,6 +124,24 @@ def is_switch_command(command: str) -> bool:
     return command in list(COMMANDS_SWITCH.values())
 
 
-__all__ = ['is_switch_command', 'is_color_command', 'get_success_answer_by_command', 'get_command_by_utterance',
-           'get_suggests', 'UTTERANCE_LIST', 'COMMAND_ON', 'COMMAND_OFF', 'COMMAND_RED', 'COMMAND_YELLOW',
-           'COMMAND_GREEN', 'COMMAND_BLUE']
+def is_info_command(command: str) -> bool:
+    """
+    Является ли команда командой отдачи информации
+
+    Parameters
+    ----------
+    command : str
+        команда
+
+    Returns
+    -------
+    bool
+        результат
+    """
+
+    return command in list(COMMANDS_INFO.values())
+
+
+__all__ = ['is_switch_command', 'is_color_command', 'is_info_command', 'get_success_answer_by_command',
+           'get_command_by_utterance', 'get_suggests', 'UTTERANCE_LIST', 'COMMAND_ON', 'COMMAND_OFF', 'COMMAND_RED',
+           'COMMAND_YELLOW', 'COMMAND_GREEN', 'COMMAND_BLUE']

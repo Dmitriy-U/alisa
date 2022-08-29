@@ -5,9 +5,9 @@ from flask_cors import CORS
 
 from config import MQTT_TOPIC
 from mqtt_client import mqtt_client_instance
-from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command
+from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
 from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
-                      is_color_command, is_switch_command, )
+                      is_color_command, is_switch_command, is_info_command, )
 
 app = Flask(__name__)
 CORS(app)
@@ -49,6 +49,12 @@ def alisa_command_handler():
     if utterance in UTTERANCE_LIST:
         # обработка существующей команды
         command = get_command_by_utterance(utterance)
+
+        if is_info_command(command):
+            # информация
+            response['response']['text'] = get_info_answer(state)
+            response['response']['end_session'] = True
+            return make_response(response, 200)
 
         if is_color_command(command):
             # установка цвета

@@ -30,6 +30,28 @@ LIGHT_SETTING_BY_COMMAND = {
 }
 
 
+def get_info_answer(state: dict) -> str:
+    """
+    Получение информации о текущем состоянии умной лампы
+
+    Parameters
+    ----------
+    state : dict
+        состояние умной лампы
+
+    Returns
+    -------
+    str
+        ответ пользователю
+    """
+
+    text = f'Настройка фито: {state["fito"]}, ' \
+           f'Яркость: {state["light"]["brightness"]}, Температура цвета: {state["light"]["brightness"]}, ' \
+           f'Красный: {state["rgb"]["red"]}, Зелёный: {state["rgb"]["green"]}, Синий: {state["rgb"]["blue"]}'
+
+    return text
+
+
 def get_rgb_setting_by_command(command: str) -> dict:
     """
     Получить конфигурацию для установки цвета
@@ -66,4 +88,4 @@ def get_light_setting_by_command(command: str) -> dict:
     return LIGHT_SETTING_BY_COMMAND[command]
 
 
-__all__ = ['get_rgb_setting_by_command', 'get_light_setting_by_command', 'DEFAULT_SETTING']
+__all__ = ['get_rgb_setting_by_command', 'get_light_setting_by_command', 'DEFAULT_SETTING', 'get_info_answer']
