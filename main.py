@@ -3,7 +3,7 @@ import json
 from flask import Flask, request, make_response
 from flask_cors import CORS
 
-from config import MQTT_TOPIC
+from config import MQTT_TOPIC, DATABASE_PATH
 from mqtt_client import mqtt_client_instance
 from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
 from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
@@ -11,6 +11,7 @@ from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, ge
 
 app = Flask(__name__)
 CORS(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
 
 state = {}
 
