@@ -84,3 +84,80 @@ def alisa_command_handler():
     response['response']['buttons'] = get_suggests()
     response['response']['text'] = 'Не могу понять. Владик помоги!'
     return make_response(response, 200)
+
+
+@app.route("/smart-home", methods=["GET"])
+def smart_home_handler():
+    """Обработчик команд"""
+
+    print('--> request', request.json)
+
+    response = {
+        "version": request.json['version'],
+        "session": request.json['session'],
+        "response": {
+            "end_session": False
+        }
+    }
+
+    response['response']['text'] = 'Не могу понять.'
+    return make_response(response, 200)
+
+
+@app.route("/authorization-code", methods=["GET"])
+def smart_home_authorization_code():
+    """Получение авторизационного кода"""
+
+    print('--> request', request.args.to_dict())
+
+    response = {
+        "store": "test",
+        "response": {
+            "end_session": False
+        }
+    }
+
+    response['response']['text'] = 'Не могу понять.'
+    return make_response(response, 200)
+
+
+@app.route("/token", methods=["GET", "POST"])
+def smart_home_get_token():
+    """Получение токенов по авторизационному коду"""
+
+    try:
+        print('--> request args', request.args.to_dict())
+        print('--> request json', request.json)
+    except Exception:
+        pass
+
+    response = {
+        "store": "test",
+        "response": {
+            "end_session": False
+        }
+    }
+
+    response['response']['text'] = 'Не могу понять.'
+    return make_response(response, 200)
+
+
+@app.route("/refresh-token", methods=["GET", "POST"])
+def smart_home_refresh_token():
+    """Обновление и выдача новых токенов"""
+
+    try:
+        print('--> request args', request.args.to_dict())
+        print('--> request json', request.json)
+    except Exception:
+        pass
+
+    response = {
+        "store": "test",
+        "response": {
+            "end_session": False
+        }
+    }
+
+    response['response']['text'] = 'Не могу понять.'
+    return make_response(response, 200)
