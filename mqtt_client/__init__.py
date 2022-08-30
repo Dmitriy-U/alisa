@@ -1,7 +1,7 @@
 import random
 
 from paho.mqtt import client as mqtt_client
-from config import MQTT_LOGIN, MQTT_PASSWORD, MQTT_HOST, MQTT_PORT, MQTT_TOPIC
+from config.__init__ import MQTT_LOGIN, MQTT_PASSWORD, MQTT_HOST, MQTT_PORT, MQTT_TOPIC
 
 
 def on_connect(client, userdata, flags, rc):

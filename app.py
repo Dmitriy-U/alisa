@@ -1,9 +1,10 @@
 import json
 
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, render_template
 from flask_cors import CORS
 
 from config import MQTT_TOPIC, DATABASE_PATH
+from database import User, AuthorizationCode, db
 from mqtt_client import mqtt_client_instance
 from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
 from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
@@ -12,6 +13,15 @@ from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, ge
 app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
+    # user = User(email='1@1.ru', password="11111")
+    # db.session.add(user)
+    # db.session.commit()
 
 state = {}
 
@@ -105,21 +115,25 @@ def smart_home_handler():
     return make_response(response, 200)
 
 
-@app.route("/authorization-code", methods=["GET"])
+@app.get("/authorization-code")
 def smart_home_authorization_code():
     """Получение авторизационного кода"""
 
-    print('--> request', request.args.to_dict())
+    return render_template('authorization-code.html', **request.args.to_dict())
 
-    response = {
-        "store": "test",
-        "response": {
-            "end_session": False
-        }
-    }
 
-    response['response']['text'] = 'Не могу понять.'
-    return make_response(response, 200)
+@app.post("/authorization-code-grant")
+def smart_home_get_authorization_code_grant():
+    """Генерация авторизационного кода"""
+    print('--> request json', request.json)
+
+    user = User.query.filter_by(email=request.json['email']).first()
+
+    authorization_code = AuthorizationCode(client_id=request.json['clientId'], scope=request.json['scope'], user=user)
+    db.session.add(authorization_code)
+    db.session.commit()
+
+    return make_response({}, 200)
 
 
 @app.route("/token", methods=["GET", "POST"])
