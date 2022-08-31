@@ -129,6 +129,8 @@ def smart_home_get_authorization_code_grant():
 
     user = User.query.filter_by(email=request.json['email']).first()
 
+    print('user', user)
+
     authorization_code = AuthorizationCode(client_id=request.json['clientId'], scope=request.json['scope'], user=user)
     db.session.add(authorization_code)
     db.session.commit()

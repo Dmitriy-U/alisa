@@ -22,6 +22,9 @@ class User(db.Model):
     # TODO: шифровать password
     password = db.Column(db.String(255), nullable=False)
 
+    authorization_codes = db.relationship("AuthorizationCode", back_populates="user")
+    tokens = db.relationship("Token", back_populates="user")
+
     def __repr__(self):
         return f'<User {self.email}>'
 
@@ -34,12 +37,7 @@ class AuthorizationCode(db.Model):
     scope = db.Column(db.String(55), nullable=False)
 
     user_uuid = db.Column(db.String(64), db.ForeignKey('user.uuid'), nullable=False)
-    user = db.relationship('User', backref=db.backref('authorization_codes', lazy='dynamic'))
-
-    def __init__(self, client_id, user, scope):
-        self.client_id = client_id
-        self.user = user
-        self.scope = scope
+    user = db.relationship("User", back_populates="authorization_codes")
 
     def __repr__(self):
         return f'<AuthorizationCode {self.code}>'
@@ -54,10 +52,7 @@ class Token(db.Model):
     active = db.Column(db.String(64), nullable=False, default=get_default_uuid)
 
     user_uuid = db.Column(db.String(64), db.ForeignKey('user.uuid'), nullable=False)
-    user = db.relationship('User', backref=db.backref('tokens', lazy='dynamic'))
-
-    def __init__(self, user):
-        self.user = user
+    user = db.relationship('User', back_populates="tokens")
 
     def __repr__(self):
         return f'<Token {self.code}>'
