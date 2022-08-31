@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, request, make_response, render_template
+from flask import Flask, request, make_response, render_template, jsonify
 from flask_cors import CORS
 
 from config import MQTT_TOPIC, DATABASE_PATH
@@ -19,8 +19,8 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-    # user = User(email='1@1.ru', password="11111")
-    # db.session.add(user)
+    # test_user = User(email='1@1.ru', password="11111")
+    # db.session.add(test_user)
     # db.session.commit()
 
 state = {}
@@ -125,17 +125,24 @@ def smart_home_authorization_code():
 @app.post("/authorization-code-grant")
 def smart_home_get_authorization_code_grant():
     """Генерация авторизационного кода"""
-    print('--> request json', request.json)
 
     user = User.query.filter_by(email=request.json['email']).first()
 
-    print('user', user)
+    if user is None:
+        return jsonify({'error': f"Пользователь с email: {request.json['email']} не найден"}), 404
+
+    if not user.check_password(request.json['password']):
+        return jsonify({'error': "Пароль не верный"}), 403
+
+    authorization_code = AuthorizationCode.query.filter_by(user_uuid=user.uuid).first()
+    if authorization_code is not None:
+        return jsonify({"code": authorization_code.code})
 
     authorization_code = AuthorizationCode(client_id=request.json['clientId'], scope=request.json['scope'], user=user)
     db.session.add(authorization_code)
     db.session.commit()
 
-    return make_response({}, 200)
+    return jsonify({"code": authorization_code.code})
 
 
 @app.route("/token", methods=["GET", "POST"])

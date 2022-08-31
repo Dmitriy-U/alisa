@@ -25,6 +25,9 @@ class User(db.Model):
     authorization_codes = db.relationship("AuthorizationCode", back_populates="user")
     tokens = db.relationship("Token", back_populates="user")
 
+    def check_password(self, password: str) -> bool:
+        return self.password == password
+
     def __repr__(self):
         return f'<User {self.email}>'
 
