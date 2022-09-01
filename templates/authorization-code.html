@@ -78,9 +78,12 @@
                 scope: '{{ scope }}',
                 state: '{{ state }}',
                 client_id: '{{ client_id }}',
-                code: data.code,
+                clientId: '{{ client_id }}',
+                response_type: '{{ response_type }}',
+                responseType: '{{ response_type }}',
+                code: data.code
             });
-            window.location = `{{ redirect_uri }}?${queryParams}`;
+            window.location.assign(`{{ redirect_uri }}?${queryParams}`);
         } else {
             error.innerText = data.error;
             showError();
