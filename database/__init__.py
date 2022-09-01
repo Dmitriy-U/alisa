@@ -52,10 +52,10 @@ class Token(db.Model):
     access_token = db.Column(db.String(64), primary_key=True, default=get_default_uuid)
     refresh_token = db.Column(db.String(64), index=True, nullable=False, default=get_default_uuid)
     expires_in = db.Column(db.DateTime, nullable=False, default=get_default_expires_in_datetime)
-    active = db.Column(db.String(64), nullable=False, default=get_default_uuid)
+    active = db.Column(db.Boolean, nullable=False, default=True)
 
     user_uuid = db.Column(db.String(64), db.ForeignKey('user.uuid'), nullable=False)
     user = db.relationship('User', back_populates="tokens")
 
     def __repr__(self):
-        return f'<Token {self.code}>'
+        return f'<Token {self.access_token}>'
