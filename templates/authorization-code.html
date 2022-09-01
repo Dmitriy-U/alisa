@@ -59,16 +59,16 @@
             '/authorization-code-grant',
             {
                 method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     scope: scope.value,
                     clientId: clientId.value,
                     email: email.value,
                     password: password.value,
                 }),
-                mode: 'cors',
-                cache: 'no-cache',
-                credentials: 'same-origin',
-                headers: {'Content-Type': 'application/json'},
             }
         );
         const data = await response.json();

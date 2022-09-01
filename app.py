@@ -2,6 +2,7 @@ import json
 
 from flask import Flask, request, make_response, render_template, jsonify
 from flask_cors import CORS
+from functools import wraps
 
 from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET
 from database import User, AuthorizationCode, db, Token
@@ -37,6 +38,31 @@ def on_message(client, userdata, message):
 
 
 mqtt_client_instance.on_message = on_message
+
+
+def oauth2_decorator():
+    def _oauth2_decorator(f):
+        @wraps(f)
+        def __oauth2_decorator(*args, **kwargs):
+            headers = request.headers
+
+            if headers.get('Authorization') is None:
+                return make_response({"error": "Отсутствует Bearer токен"}, 401)
+
+            authorization = headers.get('Authorization')
+            access_token = authorization.split('Bearer ', 1)[1]
+
+            print('authorization -->', authorization)
+            print('access_token -->', access_token)
+
+            # just do here everything what you need
+            print('before home')
+            result = f(*args, **kwargs)
+            print('home result: %s' % result)
+            print('after home')
+            return result
+        return __oauth2_decorator
+    return _oauth2_decorator
 
 
 @app.route("/", methods=["POST", "GET"])
@@ -104,18 +130,29 @@ def alisa_command_handler():
 def smart_home_handler():
     """Обработчик команд"""
 
-    print('--> request', request.json)
+    try:
+        print('--> request query', request.args.to_dict())
+        print('--> request form', request.form)
+        print('--> request form', request.form)
+    except Exception:
+        pass
 
-    response = {
-        "version": request.json['version'],
-        "session": request.json['session'],
-        "response": {
-            "end_session": False
-        }
-    }
+    return make_response({}, 200)
 
-    response['response']['text'] = 'Не могу понять.'
-    return make_response(response, 200)
+
+@app.get("/smart-home/v1.0/user/devices")
+@oauth2_decorator()
+def smart_home_get_user_devices():
+    """Получение устройств пользователя"""
+
+    try:
+        print('--> request query', request.args.to_dict())
+        print('--> request form', request.form)
+        print('--> request form', request.form)
+    except Exception:
+        pass
+
+    return make_response({}, 200)
 
 
 @app.get("/authorization-code")
