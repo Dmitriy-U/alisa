@@ -148,25 +148,17 @@ def smart_home_get_authorization_code_grant():
     return jsonify({"code": authorization_code.code})
 
 
-@app.route("/token", methods=["GET", "POST"])
+@app.post("/token")
 def smart_home_get_token():
     """Получение токенов по авторизационному коду"""
 
     try:
-        print('--> request args', request.args.to_dict())
-        print('--> request json', request.json)
+        print('smart_home_get_token query params -->', request.args.to_dict())
+        print('smart_home_get_token payload -->', request.json)
     except Exception:
         pass
 
-    response = {
-        "store": "test",
-        "response": {
-            "end_session": False
-        }
-    }
-
-    response['response']['text'] = 'Не могу понять.'
-    return make_response(response, 200)
+    return make_response(request.json, 500)
 
 
 @app.route("/refresh-token", methods=["GET", "POST"])
