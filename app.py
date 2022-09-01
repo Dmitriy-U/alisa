@@ -3,8 +3,8 @@ import json
 from flask import Flask, request, make_response, render_template, jsonify
 from flask_cors import CORS
 
-from config import MQTT_TOPIC, DATABASE_PATH
-from database import User, AuthorizationCode, db
+from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET
+from database import User, AuthorizationCode, db, Token
 from mqtt_client import mqtt_client_instance
 from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
 from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
@@ -152,13 +152,31 @@ def smart_home_get_authorization_code_grant():
 def smart_home_get_token():
     """Получение токенов по авторизационному коду"""
 
-    try:
-        print('smart_home_get_token query params -->', request.args.to_dict())
-        print('smart_home_get_token payload -->', request.json)
-    except Exception:
-        pass
+    print('smart_home_get_token payload form -->', request.form)
 
-    return make_response(request.json, 500)
+    if request.form.get('client_secret') != YANDEX_CLIENT_SECRET:
+        return jsonify({'error': "Секрет приложения неверный"}), 400
+
+    authorization_code = AuthorizationCode.query.filter_by(code=request.form.get('code')).first()
+    print('authorization_code -->', authorization_code)
+
+    if authorization_code is None:
+        return jsonify({'error': "Отсутствует код авторизации. Привяжите устройство ещё раз"}), 404
+
+    if authorization_code.code is request.form.get('code'):
+        return jsonify({'error': "Код авторизации невалидный"}), 401
+
+    token = Token(user=authorization_code.user)
+    db.session.add(token)
+    db.session.commit()
+
+    return jsonify({
+        "token_type": "bearer",
+        "expires_in": int(round(token.expires_in.timestamp())),
+        "scope": authorization_code.scope,
+        "access_token": token.access_token,
+        "refresh_token": token.refresh_token,
+    })
 
 
 @app.route("/refresh-token", methods=["GET", "POST"])
