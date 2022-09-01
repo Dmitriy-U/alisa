@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Получение кода авторизации</title>
 </head>
@@ -72,7 +73,18 @@
         );
         const data = await response.json();
 
-        console.log('submit', data);
+        if (response.ok) {
+            const queryParams = new URLSearchParams({
+                scope: '{{ scope }}',
+                state: '{{ state }}',
+                client_id: '{{ client_id }}',
+                code: data.code,
+            });
+            window.location = `{{ redirect_uri }}?${queryParams}`;
+        } else {
+            error.innerText = data.error;
+            showError();
+        }
     };
 </script>
 </body>

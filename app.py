@@ -19,9 +19,12 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-    # test_user = User(email='1@1.ru', password="11111")
-    # db.session.add(test_user)
-    # db.session.commit()
+    test_user = User.query.filter_by(email='1@1.ru').first()
+
+    if test_user is None:
+        test_user = User(email='1@1.ru', password="11111")
+        db.session.add(test_user)
+        db.session.commit()
 
 state = {}
 
