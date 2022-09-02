@@ -2,11 +2,11 @@ import json
 
 from flask import Flask, request, make_response, render_template, jsonify
 from flask_cors import CORS
-from functools import wraps
 
+from mqtt_client import mqtt_client_instance
+from authentification import oauth2_decorator
 from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET
 from database import User, AuthorizationCode, db, Token
-from mqtt_client import mqtt_client_instance
 from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
 from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
                       is_color_command, is_switch_command, is_info_command, )
@@ -40,32 +40,7 @@ def on_message(client, userdata, message):
 mqtt_client_instance.on_message = on_message
 
 
-def oauth2_decorator():
-    def _oauth2_decorator(f):
-        @wraps(f)
-        def __oauth2_decorator(*args, **kwargs):
-            headers = request.headers
-
-            if headers.get('Authorization') is None:
-                return make_response({"error": "Отсутствует Bearer токен"}, 401)
-
-            authorization = headers.get('Authorization')
-            access_token = authorization.split('Bearer ', 1)[1]
-
-            print('authorization -->', authorization)
-            print('access_token -->', access_token)
-
-            # just do here everything what you need
-            print('before home')
-            result = f(*args, **kwargs)
-            print('home result: %s' % result)
-            print('after home')
-            return result
-        return __oauth2_decorator
-    return _oauth2_decorator
-
-
-@app.route("/", methods=["POST", "GET"])
+@app.post("/")
 def alisa_command_handler():
     global state
 
@@ -126,33 +101,7 @@ def alisa_command_handler():
     return make_response(response, 200)
 
 
-@app.route("/smart-home", methods=["GET"])
-def smart_home_handler():
-    """Обработчик команд"""
-
-    try:
-        print('--> request query', request.args.to_dict())
-        print('--> request form', request.form)
-        print('--> request form', request.form)
-    except Exception:
-        pass
-
-    return make_response({}, 200)
-
-
-@app.get("/smart-home/v1.0/user/devices")
-@oauth2_decorator()
-def smart_home_get_user_devices():
-    """Получение устройств пользователя"""
-
-    try:
-        print('--> request query', request.args.to_dict())
-        print('--> request form', request.form)
-        print('--> request form', request.form)
-    except Exception:
-        pass
-
-    return make_response({}, 200)
+# Авторизация Яндекс Диалоги
 
 
 @app.get("/authorization-code")
@@ -235,3 +184,70 @@ def smart_home_refresh_token():
 
     response['response']['text'] = 'Не могу понять.'
     return make_response(response, 200)
+
+
+# Методы умного дома
+
+
+@app.get("/smart-home/v1.0")
+@oauth2_decorator()
+def smart_home_check(user):
+    """Проверка доступности"""
+
+    return make_response({}, 200)
+
+
+@app.post("/smart-home/v1.0/user/unlink")
+@oauth2_decorator()
+def smart_home_user_unlink(user):
+    """Разъединение аккаунтов"""
+
+    headers = request.headers
+    request_id = headers.get('X-Request-Id')
+
+    if request_id is None:
+        return make_response({"error": "Отсутствует request_id в заголовке запроса"}, 404)
+
+    # TODO: Удалять все токены и связь AuthorizationCode
+
+    return make_response({"request_id": request_id}, 200)
+
+
+@app.get("/smart-home/v1.0/user/devices")
+@oauth2_decorator()
+def smart_home_get_user_devices(user):
+    """Получение устройств пользователя"""
+
+    print('--> user', user.__dict__)
+
+    headers = request.headers
+    request_id = headers.get('X-Request-Id')
+    if request_id is None:
+        return make_response({"error": "Отсутствует request_id в заголовке запроса"}, 404)
+
+    body = {
+        "request_id": request_id,
+        "payload": {
+            "user_id": user.uuid,
+            "devices": [
+                {
+                    "id": '79e22dd5-dbef-41b4-bce4-60853e6ebe21',
+                    "name": 'Умная лампа',
+                    "description": 'Лампа, которая умеет менять цвет, яркость, температуру света',
+                    "room": 'Столовая',
+                    "type": 'light',
+                    "custom_data": {},
+                    "capabilities": [],
+                    "properties": [],
+                    "device_info": {
+                        "manufacturer": "Бастион",
+                        "model": "Умная лампа",
+                        "hw_version": "1.0.0",
+                        "sw_version": "1.0.0"
+                    }
+                }
+            ],
+        }
+    }
+
+    return make_response(body, 200)
