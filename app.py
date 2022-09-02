@@ -278,3 +278,11 @@ def smart_home_get_user_devices(user):
     }
 
     return make_response(body, 200)
+
+
+@app.post("/smart-home/v1.0/user/devices/query")
+@authenticate_user
+def smart_home_user_devices_query(user):
+    """Действия с устройствами"""
+
+    return make_response({}, 200)
