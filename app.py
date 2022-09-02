@@ -236,9 +236,15 @@ def smart_home_get_user_devices(user):
                     "name": 'Умная лампа',
                     "description": 'Лампа, которая умеет менять цвет, яркость, температуру света',
                     "room": 'Столовая',
-                    "type": 'light',
+                    "type": 'devices.types.light',
                     "custom_data": {},
-                    "capabilities": [],
+                    "capabilities": [
+                        {
+                            "type": "devices.capabilities.on_off",
+                            "retrievable": True,
+                            "reportable": True,
+                        },
+                    ],
                     "properties": [],
                     "device_info": {
                         "manufacturer": "Бастион",
