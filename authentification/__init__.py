@@ -5,7 +5,7 @@ from flask import request, make_response, jsonify
 from database import Token
 
 
-def oauth2_decorator():
+def authenticate_user():
     """
     Проверяет наличие и срок экспирации токена доступа
 
@@ -18,9 +18,9 @@ def oauth2_decorator():
         function
     """
 
-    def _oauth2_decorator(f):
+    def _authenticate_user(f):
         @wraps(f)
-        def __oauth2_decorator(*args, **kwargs):
+        def __authenticate_user(*args, **kwargs):
             headers = request.headers
 
             if headers.get('Authorization') is None:
@@ -37,8 +37,8 @@ def oauth2_decorator():
             print('expires_in -->', token.expires_in)
 
             return f(*args, **kwargs, user=token.user)
-        return __oauth2_decorator
-    return _oauth2_decorator
+        return __authenticate_user
+    return _authenticate_user
 
 
-__all__ = ['oauth2_decorator']
+__all__ = ['authenticate_user']

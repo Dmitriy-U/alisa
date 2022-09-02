@@ -4,7 +4,7 @@ from flask import Flask, request, make_response, render_template, jsonify
 from flask_cors import CORS
 
 from mqtt_client import mqtt_client_instance
-from authentification import oauth2_decorator
+from authentification import authenticate_user
 from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET
 from database import User, AuthorizationCode, db, Token
 from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
@@ -190,7 +190,7 @@ def smart_home_refresh_token():
 
 
 @app.get("/smart-home/v1.0")
-@oauth2_decorator()
+@authenticate_user()
 def smart_home_check(user):
     """Проверка доступности"""
 
@@ -198,7 +198,7 @@ def smart_home_check(user):
 
 
 @app.post("/smart-home/v1.0/user/unlink")
-@oauth2_decorator()
+@authenticate_user()
 def smart_home_user_unlink(user):
     """Разъединение аккаунтов"""
 
@@ -214,7 +214,7 @@ def smart_home_user_unlink(user):
 
 
 @app.get("/smart-home/v1.0/user/devices")
-@oauth2_decorator()
+@authenticate_user()
 def smart_home_get_user_devices(user):
     """Получение устройств пользователя"""
 
