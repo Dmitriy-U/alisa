@@ -3,13 +3,13 @@ import uuid
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 
-from config.__init__ import TOKEN_EXPIRES_DELTA_MINUTES
+from config import TOKEN_EXPIRES_IS_SECONDS
 
 db = SQLAlchemy()
 
 
 def get_default_expires_in_datetime() -> datetime:
-    return datetime.now() + timedelta(minutes=TOKEN_EXPIRES_DELTA_MINUTES)
+    return datetime.now() + timedelta(seconds=TOKEN_EXPIRES_IS_SECONDS)
 
 
 def get_default_uuid() -> str:

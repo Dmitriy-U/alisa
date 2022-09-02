@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 from mqtt_client import mqtt_client_instance
 from authentification import authenticate_user
-from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET
+from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET, TOKEN_EXPIRES_IS_SECONDS, TOKEN_TYPE
 from database import User, AuthorizationCode, db, Token
 from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
 from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
@@ -138,16 +138,13 @@ def smart_home_get_authorization_code_grant():
 def smart_home_get_token():
     """Получение токенов по авторизационному коду"""
 
-    print('smart_home_get_token payload form -->', request.form)
-
     if request.form.get('client_secret') != YANDEX_CLIENT_SECRET:
         return jsonify({'error': "Секрет приложения неверный"}), 400
 
     authorization_code = AuthorizationCode.query.filter_by(code=request.form.get('code')).first()
-    print('authorization_code -->', authorization_code)
 
     if authorization_code is None:
-        return jsonify({'error': "Отсутствует код авторизации. Привяжите устройство ещё раз"}), 404
+        return jsonify({'error': "Отсутствует разрешение на авторизацию. Привяжите устройство ещё раз"}), 404
 
     if authorization_code.code is request.form.get('code'):
         return jsonify({'error': "Код авторизации невалидный"}), 401
@@ -157,34 +154,57 @@ def smart_home_get_token():
     db.session.commit()
 
     return jsonify({
-        "token_type": "bearer",
-        "expires_in": int(round(token.expires_in.timestamp())),
+        "token_type": TOKEN_TYPE,
+        "expires_in": TOKEN_EXPIRES_IS_SECONDS,
         "scope": authorization_code.scope,
         "access_token": token.access_token,
         "refresh_token": token.refresh_token,
     })
 
 
-@app.route("/refresh-token", methods=["GET", "POST"])
+@app.post("/refresh-token")
 def smart_home_refresh_token():
     """Обновление и выдача новых токенов"""
+    headers = request.headers
+    print("smart_home_refresh_token headers -->", headers)
 
-    try:
-        print('smart_home_refresh_token query params -->', request.args.to_dict())
-        print('smart_home_refresh_token payload form -->', request.form)
-        print('smart_home_refresh_token payload json -->', request.json)
-    except Exception:
-        pass
+    if request.form.get('client_secret') != YANDEX_CLIENT_SECRET:
+        return jsonify({'error': "Секрет приложения неверный"}), 400
 
-    response = {
-        "store": "test",
-        "response": {
-            "end_session": False
-        }
-    }
+    token = Token.query.filter_by(refresh_token=request.form.get('refresh_token')).first()
 
-    response['response']['text'] = 'Не могу понять.'
-    return make_response(response, 200)
+    if token is None:
+        return jsonify({'error': "Отсутствует токен обновления"}), 401
+
+    print('token -->', token.__dict__)
+
+    if not token.active:
+        return jsonify({'error': "Токен обновления уже использовался"}), 401
+
+    if request.form.get('client_id') is None:
+        return jsonify({'error': "Отсутствует идентификатор клиента приложения"}), 400
+
+    authorization_code = AuthorizationCode.query.filter_by(client_id=request.form.get('client_id')).first()
+
+    if authorization_code is None:
+        return jsonify({'error': "Отсутствует разрешение на авторизацию. Привяжите устройство ещё раз"}), 404
+
+    token.active = False
+    new_token = Token(user=authorization_code.user)
+    db.session.add(token)
+    db.session.add(new_token)
+    db.session.commit()
+
+    print('new_token access_token -->', new_token.access_token)
+    print('new_token refresh_token -->', new_token.refresh_token)
+
+    return jsonify({
+        "token_type": TOKEN_TYPE,
+        "expires_in": TOKEN_EXPIRES_IS_SECONDS,
+        "scope": authorization_code.scope,
+        "access_token": new_token.access_token,
+        "refresh_token": new_token.refresh_token,
+    })
 
 
 # Методы умного дома
