@@ -9,7 +9,7 @@ db = SQLAlchemy()
 
 
 def get_default_expires_in_datetime() -> datetime:
-    return datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRES_DELTA_MINUTES)
+    return datetime.now() + timedelta(minutes=TOKEN_EXPIRES_DELTA_MINUTES)
 
 
 def get_default_uuid() -> str:
