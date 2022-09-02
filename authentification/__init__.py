@@ -1,5 +1,5 @@
+from datetime import datetime
 from functools import wraps
-
 from flask import request, make_response, jsonify
 
 from database import Token
@@ -33,7 +33,10 @@ def authenticate_user(f):
             return jsonify({'error': "Отсутствует токен доступа"}), 401
 
         print('access_token -->', access_token)
-        print('expires_in -->', token.expires_in)
+        print('expires_in -->', int(round(token.expires_in.timestamp())), int(round(datetime.now().timestamp())))
+
+        if int(round(datetime.now().timestamp())) > int(round(token.expires_in.timestamp())):
+            return jsonify({'error': "Срок жизни токена доступа истёк"}), 401
 
         defaults = {"user": token.user}
         defaults.update(kwargs)
