@@ -5,7 +5,7 @@ from flask import request, make_response, jsonify
 from database import Token
 
 
-def authenticate_user():
+def authenticate_user(f):
     """
     Проверяет наличие и срок экспирации токена доступа
 
@@ -18,27 +18,29 @@ def authenticate_user():
         function
     """
 
-    def _authenticate_user(f):
-        @wraps(f)
-        def __authenticate_user(*args, **kwargs):
-            headers = request.headers
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        headers = request.headers
 
-            if headers.get('Authorization') is None:
-                return make_response({"error": "Отсутствует Bearer токен"}, 401)
+        if headers.get('Authorization') is None:
+            return make_response({"error": "Отсутствует Bearer токен"}, 401)
 
-            authorization = headers.get('Authorization')
-            access_token = authorization.split('Bearer ', 1)[1]
-            token = Token.query.filter_by(access_token=access_token).first()
+        authorization = headers.get('Authorization')
+        access_token = authorization.split('Bearer ', 1)[1]
+        token = Token.query.filter_by(access_token=access_token).first()
 
-            if token is None:
-                return jsonify({'error': "Отсутствует токен доступа"}), 401
+        if token is None:
+            return jsonify({'error': "Отсутствует токен доступа"}), 401
 
-            print('access_token -->', access_token)
-            print('expires_in -->', token.expires_in)
+        print('access_token -->', access_token)
+        print('expires_in -->', token.expires_in)
 
-            return f(*args, **kwargs, user=token.user)
-        return __authenticate_user
-    return _authenticate_user
+        defaults = {"user": token.user}
+        defaults.update(kwargs)
+
+        return f(*args, **defaults)
+
+    return decorator
 
 
 __all__ = ['authenticate_user']

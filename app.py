@@ -170,8 +170,9 @@ def smart_home_refresh_token():
     """Обновление и выдача новых токенов"""
 
     try:
-        print('--> request args', request.args.to_dict())
-        print('--> request json', request.json)
+        print('smart_home_refresh_token query params -->', request.args.to_dict())
+        print('smart_home_refresh_token payload form -->', request.form)
+        print('smart_home_refresh_token payload json -->', request.json)
     except Exception:
         pass
 
@@ -190,7 +191,7 @@ def smart_home_refresh_token():
 
 
 @app.get("/smart-home/v1.0")
-@authenticate_user()
+@authenticate_user
 def smart_home_check(user):
     """Проверка доступности"""
 
@@ -198,7 +199,7 @@ def smart_home_check(user):
 
 
 @app.post("/smart-home/v1.0/user/unlink")
-@authenticate_user()
+@authenticate_user
 def smart_home_user_unlink(user):
     """Разъединение аккаунтов"""
 
@@ -214,7 +215,7 @@ def smart_home_user_unlink(user):
 
 
 @app.get("/smart-home/v1.0/user/devices")
-@authenticate_user()
+@authenticate_user
 def smart_home_get_user_devices(user):
     """Получение устройств пользователя"""
 
