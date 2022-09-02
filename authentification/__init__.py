@@ -32,8 +32,8 @@ def authenticate_user(f):
         if token is None:
             return jsonify({'error': "Отсутствует токен доступа"}), 401
 
-        print('access_token -->', access_token)
-        print('expires_in -->', int(round(token.expires_in.timestamp())), int(round(datetime.now().timestamp())))
+        print('expires_in -->', int(round(token.expires_in.timestamp())))
+        print('now -->', int(round(datetime.now().timestamp())))
 
         if int(round(datetime.now().timestamp())) > int(round(token.expires_in.timestamp())):
             return jsonify({'error': "Срок жизни токена доступа истёк"}), 401
