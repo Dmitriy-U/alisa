@@ -22,7 +22,7 @@ class User(db.Model):
     # TODO: шифровать password
     password = db.Column(db.String(255), nullable=False)
 
-    authorization_grants = db.relationship("AuthorizationGrant", back_populates="user")
+    authorization_grants = db.relationship("AuthorizationGrant", back_populates="user", cascade="all, delete")
 
     def check_password(self, password: str) -> bool:
         return self.password == password
@@ -35,7 +35,7 @@ class Client(db.Model):
     id = db.Column(db.String(64), primary_key=True, unique=True)
     title = db.Column(db.String(255), unique=True, nullable=False)
 
-    authorization_grants = db.relationship("AuthorizationGrant", back_populates="client")
+    authorization_grants = db.relationship("AuthorizationGrant", back_populates="client", cascade="all, delete")
 
     def __repr__(self):
         return f'<Client {self.id} title={self.title}>'
@@ -51,8 +51,8 @@ class AuthorizationGrant(db.Model):
     user_uuid = db.Column(db.String(64), db.ForeignKey('user.uuid'), nullable=False)
     user = db.relationship("User", back_populates="authorization_grants")
 
-    authorization_code = db.relationship("AuthorizationCode", back_populates="authorization_grant", uselist=False)
-    tokens = db.relationship("Token", back_populates="authorization_grant")
+    authorization_code = db.relationship("AuthorizationCode", back_populates="authorization_grant", uselist=False, cascade="all, delete")
+    tokens = db.relationship("Token", back_populates="authorization_grant", cascade="all, delete")
 
     def __repr__(self):
         return f'<AuthorizationGrant {self.uuid} client_id={self.client_id} user_uuid={self.user_uuid}>'
