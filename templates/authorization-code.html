@@ -78,9 +78,7 @@
                 scope: '{{ scope }}',
                 state: '{{ state }}',
                 client_id: '{{ client_id }}',
-                clientId: '{{ client_id }}',
                 response_type: '{{ response_type }}',
-                responseType: '{{ response_type }}',
                 code: data.code
             });
             window.location.assign(`{{ redirect_uri }}?${queryParams}`);

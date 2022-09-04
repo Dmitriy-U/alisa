@@ -123,7 +123,10 @@ def smart_home_get_authorization_code_grant():
     if not user.check_password(request.json['password']):
         return jsonify({'error': "Пароль не верный"}), 403
 
-    authorization_code = AuthorizationCode.query.filter_by(user_uuid=user.uuid).first()
+    authorization_code = AuthorizationCode.query.filter_by(
+        user_uuid=user.uuid,
+        client_id=request.json['clientId']
+    ).first()
     if authorization_code is not None:
         return jsonify({"code": authorization_code.code})
 
@@ -165,8 +168,6 @@ def smart_home_get_token():
 @app.post("/refresh-token")
 def smart_home_refresh_token():
     """Обновление и выдача новых токенов"""
-    headers = request.headers
-    print("smart_home_refresh_token headers -->", headers)
 
     if request.form.get('client_secret') != YANDEX_CLIENT_SECRET:
         return jsonify({'error': "Секрет приложения неверный"}), 400
@@ -175,8 +176,6 @@ def smart_home_refresh_token():
 
     if token is None:
         return jsonify({'error': "Отсутствует токен обновления"}), 401
-
-    print('token -->', token.__dict__)
 
     if not token.active:
         return jsonify({'error': "Токен обновления уже использовался"}), 401
@@ -194,9 +193,6 @@ def smart_home_refresh_token():
     db.session.add(token)
     db.session.add(new_token)
     db.session.commit()
-
-    print('new_token access_token -->', new_token.access_token)
-    print('new_token refresh_token -->', new_token.refresh_token)
 
     return jsonify({
         "token_type": TOKEN_TYPE,
@@ -238,8 +234,6 @@ def smart_home_user_unlink(user):
 @authenticate_user
 def smart_home_get_user_devices(user):
     """Получение устройств пользователя"""
-
-    print('--> user', user.__dict__)
 
     headers = request.headers
     request_id = headers.get('X-Request-Id')
