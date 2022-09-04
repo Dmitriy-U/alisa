@@ -22,28 +22,50 @@ class User(db.Model):
     # TODO: шифровать password
     password = db.Column(db.String(255), nullable=False)
 
-    authorization_codes = db.relationship("AuthorizationCode", back_populates="user")
-    tokens = db.relationship("Token", back_populates="user")
+    authorization_grants = db.relationship("AuthorizationGrant", back_populates="user")
 
     def check_password(self, password: str) -> bool:
         return self.password == password
 
     def __repr__(self):
-        return f'<User {self.email}>'
+        return f'<User {self.uuid} email={self.email}>'
+
+
+class Client(db.Model):
+    id = db.Column(db.String(64), primary_key=True, unique=True)
+    title = db.Column(db.String(255), unique=True, nullable=False)
+
+    authorization_grants = db.relationship("AuthorizationGrant", back_populates="client")
+
+    def __repr__(self):
+        return f'<Client {self.id} title={self.title}>'
+
+
+class AuthorizationGrant(db.Model):
+    uuid = db.Column(db.String(64), primary_key=True, default=get_default_uuid)
+    scope = db.Column(db.String(55), nullable=False)
+
+    client_id = db.Column(db.String(64), db.ForeignKey('client.id'), nullable=False)
+    client = db.relationship("Client", back_populates="authorization_grants")
+
+    user_uuid = db.Column(db.String(64), db.ForeignKey('user.uuid'), nullable=False)
+    user = db.relationship("User", back_populates="authorization_grants")
+
+    authorization_code = db.relationship("AuthorizationCode", back_populates="authorization_grant", uselist=False)
+    tokens = db.relationship("Token", back_populates="authorization_grant")
+
+    def __repr__(self):
+        return f'<AuthorizationGrant {self.uuid} client_id={self.client_id} user_uuid={self.user_uuid}>'
 
 
 class AuthorizationCode(db.Model):
-    __table_args__ = (db.UniqueConstraint('scope', 'client_id', 'user_uuid'),)
-
     code = db.Column(db.String(64), primary_key=True, default=get_default_uuid)
-    client_id = db.Column(db.String(64), index=True, nullable=False)
-    scope = db.Column(db.String(55), nullable=False)
 
-    user_uuid = db.Column(db.String(64), db.ForeignKey('user.uuid'), nullable=False)
-    user = db.relationship("User", back_populates="authorization_codes")
+    authorization_grant_uuid = db.Column(db.String(64), db.ForeignKey('authorization_grant.uuid'), nullable=False)
+    authorization_grant = db.relationship("AuthorizationGrant", back_populates="authorization_code")
 
     def __repr__(self):
-        return f'<AuthorizationCode {self.code}>'
+        return f'<AuthorizationCode {self.code} authorization_grant_uuid={self.authorization_grant_uuid}>'
 
 
 class Token(db.Model):
@@ -51,11 +73,15 @@ class Token(db.Model):
 
     access_token = db.Column(db.String(64), primary_key=True, default=get_default_uuid)
     refresh_token = db.Column(db.String(64), index=True, nullable=False, default=get_default_uuid)
-    expires_in = db.Column(db.DateTime, nullable=False, default=get_default_expires_in_datetime)
-    active = db.Column(db.Boolean, nullable=False, default=True)
+    expires_in = db.Column(db.Integer, nullable=False, default=TOKEN_EXPIRES_IS_SECONDS)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
-    user_uuid = db.Column(db.String(64), db.ForeignKey('user.uuid'), nullable=False)
-    user = db.relationship('User', back_populates="tokens")
+    authorization_grant_uuid = db.Column(db.String(64), db.ForeignKey('authorization_grant.uuid'), nullable=False)
+    authorization_grant = db.relationship("AuthorizationGrant", back_populates="tokens")
 
     def __repr__(self):
-        return f'<Token {self.access_token}>'
+        return f'<Token access_token={self.access_token} refresh_token={self.refresh_token} ' \
+               f'authorization_grant_uuid={self.authorization_grant_uuid}>'
+
+    def expired_in_datatime(self):
+        return self.created_at + timedelta(seconds=TOKEN_EXPIRES_IS_SECONDS)

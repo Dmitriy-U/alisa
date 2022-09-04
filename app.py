@@ -6,7 +6,7 @@ from flask_cors import CORS
 from mqtt_client import mqtt_client_instance
 from authentification import authenticate_user
 from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET, TOKEN_EXPIRES_IS_SECONDS, TOKEN_TYPE
-from database import User, AuthorizationCode, db, Token
+from database import db, User, AuthorizationGrant, Token, Client, AuthorizationCode
 from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
 from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
                       is_color_command, is_switch_command, is_info_command, )
@@ -22,9 +22,16 @@ with app.app_context():
 
     test_user = User.query.filter_by(email='1@1.ru').first()
 
+    test_client = Client.query.filter_by(id='8bab59cc-e5be-471f-b1e9-1c4b338d427b').first()
+
     if test_user is None:
         test_user = User(email='1@1.ru', password="11111")
         db.session.add(test_user)
+        db.session.commit()
+
+    if test_client is None:
+        test_client = Client(id='8bab59cc-e5be-471f-b1e9-1c4b338d427b', title='Яндекс Умный дом')
+        db.session.add(test_client)
         db.session.commit()
 
 state = {}
@@ -108,12 +115,19 @@ def alisa_command_handler():
 def smart_home_authorization_code():
     """Получение авторизационного кода"""
 
-    return render_template('authorization-code.html', **request.args.to_dict())
+    client = Client.query.filter_by(id=request.args.get('client_id')).first()
+
+    data = {**request.args.to_dict()}
+
+    if client is not None:
+        data['client_title'] = client.title
+
+    return render_template('authorization-code.html', **data)
 
 
 @app.post("/authorization-code-grant")
 def smart_home_get_authorization_code_grant():
-    """Генерация авторизационного кода"""
+    """Генерация кода авторизации"""
 
     user = User.query.filter_by(email=request.json['email']).first()
 
@@ -123,46 +137,47 @@ def smart_home_get_authorization_code_grant():
     if not user.check_password(request.json['password']):
         return jsonify({'error': "Пароль не верный"}), 403
 
-    authorization_code = AuthorizationCode.query.filter_by(
+    authorization_grant = AuthorizationGrant.query.filter_by(
         user_uuid=user.uuid,
         client_id=request.json['clientId']
     ).first()
-    if authorization_code is not None:
-        return jsonify({"code": authorization_code.code})
+    if authorization_grant is not None:
+        return jsonify({"error": "Права уже предоставлены"}), 400
 
-    authorization_code = AuthorizationCode(client_id=request.json['clientId'], scope=request.json['scope'], user=user)
+    authorization_grant = AuthorizationGrant(client_id=request.json['clientId'], scope=request.json['scope'], user=user)
+    authorization_code = AuthorizationCode(authorization_grant=authorization_grant)
+    db.session.add(authorization_grant)
     db.session.add(authorization_code)
     db.session.commit()
 
-    return jsonify({"code": authorization_code.code})
+    return jsonify({"code": authorization_grant.authorization_code.code})
 
 
 @app.post("/token")
 def smart_home_get_token():
-    """Получение токенов по авторизационному коду"""
+    """Получение токенов по коду авторизации"""
 
     if request.form.get('client_secret') != YANDEX_CLIENT_SECRET:
         return jsonify({'error': "Секрет приложения неверный"}), 400
 
     authorization_code = AuthorizationCode.query.filter_by(code=request.form.get('code')).first()
-
     if authorization_code is None:
-        return jsonify({'error': "Отсутствует разрешение на авторизацию. Привяжите устройство ещё раз"}), 404
+        return jsonify({'error': "Отсутствует код авторизации или был использован"}), 404
 
-    if authorization_code.code is request.form.get('code'):
-        return jsonify({'error': "Код авторизации невалидный"}), 401
-
-    token = Token(user=authorization_code.user)
+    token = Token(authorization_grant=authorization_code.authorization_grant)
     db.session.add(token)
+    db.session.delete(authorization_code)
     db.session.commit()
 
-    return jsonify({
+    response = {
         "token_type": TOKEN_TYPE,
         "expires_in": TOKEN_EXPIRES_IS_SECONDS,
-        "scope": authorization_code.scope,
+        "scope": authorization_code.authorization_grant.scope,
         "access_token": token.access_token,
         "refresh_token": token.refresh_token,
-    })
+    }
+
+    return jsonify(response)
 
 
 @app.post("/refresh-token")
@@ -177,27 +192,15 @@ def smart_home_refresh_token():
     if token is None:
         return jsonify({'error': "Отсутствует токен обновления"}), 401
 
-    if not token.active:
-        return jsonify({'error': "Токен обновления уже использовался"}), 401
-
-    if request.form.get('client_id') is None:
-        return jsonify({'error': "Отсутствует идентификатор клиента приложения"}), 400
-
-    authorization_code = AuthorizationCode.query.filter_by(client_id=request.form.get('client_id')).first()
-
-    if authorization_code is None:
-        return jsonify({'error': "Отсутствует разрешение на авторизацию. Привяжите устройство ещё раз"}), 404
-
-    token.active = False
-    new_token = Token(user=authorization_code.user)
-    db.session.add(token)
+    new_token = Token(authorization_grant=token.authorization_grant)
     db.session.add(new_token)
+    db.session.delete(token)
     db.session.commit()
 
     return jsonify({
         "token_type": TOKEN_TYPE,
         "expires_in": TOKEN_EXPIRES_IS_SECONDS,
-        "scope": authorization_code.scope,
+        "scope": new_token.authorization_grant.scope,
         "access_token": new_token.access_token,
         "refresh_token": new_token.refresh_token,
     })
@@ -225,7 +228,7 @@ def smart_home_user_unlink(user):
     if request_id is None:
         return make_response({"error": "Отсутствует request_id в заголовке запроса"}, 404)
 
-    # TODO: Удалять все токены и связь AuthorizationCode
+    # TODO: Удалять все токены и связь AuthorizationGrant
 
     return make_response({"request_id": request_id}, 200)
 
