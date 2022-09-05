@@ -182,6 +182,8 @@ def smart_home_get_token():
         "refresh_token": token.refresh_token,
     }
 
+    print('--> token response -->', response)
+
     return jsonify(response)
 
 
@@ -209,6 +211,8 @@ def smart_home_refresh_token():
         "access_token": new_token.access_token,
         "refresh_token": new_token.refresh_token,
     }
+
+    print('--> refresh-token response -->', response)
 
     return jsonify(response)
 
