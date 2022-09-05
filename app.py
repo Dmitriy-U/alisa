@@ -17,20 +17,25 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
+# Тестовые данные
+test_client_id = '75bfbd31-54f3-4863-aa6b-f741a6f5edd8'
+test_user_data = {
+    "email": "1@1.ru",
+    "password": "11111",
+}
+
 with app.app_context():
     db.create_all()
 
-    test_user = User.query.filter_by(email='1@1.ru').first()
-
-    test_client = Client.query.filter_by(id='8bab59cc-e5be-471f-b1e9-1c4b338d427b').first()
-
+    test_user = User.query.filter_by(email=test_user_data["email"]).first()
     if test_user is None:
-        test_user = User(email='1@1.ru', password="11111")
+        test_user = User(**test_user_data)
         db.session.add(test_user)
         db.session.commit()
 
+    test_client = Client.query.filter_by(id=test_client_id).first()
     if test_client is None:
-        test_client = Client(id='8bab59cc-e5be-471f-b1e9-1c4b338d427b', title='Яндекс Умный дом')
+        test_client = Client(id=test_client_id, title='Яндекс Умный дом')
         db.session.add(test_client)
         db.session.commit()
 
@@ -197,13 +202,15 @@ def smart_home_refresh_token():
     db.session.delete(token)
     db.session.commit()
 
-    return jsonify({
+    response = {
         "token_type": TOKEN_TYPE,
         "expires_in": TOKEN_EXPIRES_IS_SECONDS,
         "scope": new_token.authorization_grant.scope,
         "access_token": new_token.access_token,
         "refresh_token": new_token.refresh_token,
-    })
+    }
+
+    return jsonify(response)
 
 
 # Методы умного дома
