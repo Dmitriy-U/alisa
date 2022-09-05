@@ -7,9 +7,9 @@ from mqtt_client import mqtt_client_instance
 from authentification import authenticate_user
 from config import MQTT_TOPIC, DATABASE_PATH, YANDEX_CLIENT_SECRET, TOKEN_EXPIRES_IS_SECONDS, TOKEN_TYPE
 from database import db, User, AuthorizationGrant, Token, Client, AuthorizationCode
-from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
-from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
-                      is_color_command, is_switch_command, is_info_command, )
+# from smart_lamp import DEFAULT_SETTING, get_rgb_setting_by_command, get_light_setting_by_command, get_info_answer
+# from commands import (UTTERANCE_LIST, get_suggests, get_command_by_utterance, get_success_answer_by_command,
+#                       is_color_command, is_switch_command, is_info_command, )
 
 app = Flask(__name__)
 CORS(app)
@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # Тестовые данные
-test_client_id = '75bfbd31-54f3-4863-aa6b-f741a6f5edd8'
+test_client_id = '8bab59cc-e5be-471f-b1e9-1c4b338d427b'
 test_user_data = {
     "email": "1@1.ru",
     "password": "11111",
