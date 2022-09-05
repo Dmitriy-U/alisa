@@ -52,87 +52,86 @@ def on_message(client, userdata, message):
 mqtt_client_instance.on_message = on_message
 
 
-@app.post("/")
-def alisa_command_handler():
-    global state
-
-    response = {
-        "version": request.json['version'],
-        "session": request.json['session'],
-        "response": {
-            "end_session": False
-        }
-    }
-
-    payload = request.json
-
-    if payload['session']['new']:
-        # Это новый пользователь.
-        response['response']['text'] = 'Привет! Что хочешь сделать с умной лампой Бастион?'
-        return make_response(response, 200)
-
-    utterance = payload['request']['original_utterance'].lower()
-
-    if utterance in UTTERANCE_LIST:
-        # обработка существующей команды
-        command = get_command_by_utterance(utterance)
-
-        if is_info_command(command):
-            # информация
-            response['response']['text'] = get_info_answer(state)
-            response['response']['end_session'] = True
-            return make_response(response, 200)
-
-        if is_color_command(command):
-            # установка цвета
-            mqtt_client_instance.publish(
-                MQTT_TOPIC,
-                json.dumps({
-                    **DEFAULT_SETTING,
-                    "rgb": get_rgb_setting_by_command(command)
-                })
-            )
-
-        if is_switch_command(command):
-            # включение/выключение
-            mqtt_client_instance.publish(
-                MQTT_TOPIC,
-                json.dumps({
-                    **DEFAULT_SETTING,
-                    "light": get_light_setting_by_command(command)
-                })
-            )
-
-        response['response']['text'] = f'Хорошо, {get_success_answer_by_command(command)}.'
-        response['response']['end_session'] = True
-        return make_response(response, 200)
-
-    # обработка несуществующей команды
-    response['response']['buttons'] = get_suggests()
-    response['response']['text'] = 'Не могу понять. Владик помоги!'
-    return make_response(response, 200)
+# @app.post("/")
+# def alisa_command_handler():
+#     global state
+#
+#     response = {
+#         "version": request.json['version'],
+#         "session": request.json['session'],
+#         "response": {
+#             "end_session": False
+#         }
+#     }
+#
+#     payload = request.json
+#
+#     if payload['session']['new']:
+#         # Это новый пользователь.
+#         response['response']['text'] = 'Привет! Что хочешь сделать с умной лампой Бастион?'
+#         return make_response(response, 200)
+#
+#     utterance = payload['request']['original_utterance'].lower()
+#
+#     if utterance in UTTERANCE_LIST:
+#         # обработка существующей команды
+#         command = get_command_by_utterance(utterance)
+#
+#         if is_info_command(command):
+#             # информация
+#             response['response']['text'] = get_info_answer(state)
+#             response['response']['end_session'] = True
+#             return make_response(response, 200)
+#
+#         if is_color_command(command):
+#             # установка цвета
+#             mqtt_client_instance.publish(
+#                 MQTT_TOPIC,
+#                 json.dumps({
+#                     **DEFAULT_SETTING,
+#                     "rgb": get_rgb_setting_by_command(command)
+#                 })
+#             )
+#
+#         if is_switch_command(command):
+#             # включение/выключение
+#             mqtt_client_instance.publish(
+#                 MQTT_TOPIC,
+#                 json.dumps({
+#                     **DEFAULT_SETTING,
+#                     "light": get_light_setting_by_command(command)
+#                 })
+#             )
+#
+#         response['response']['text'] = f'Хорошо, {get_success_answer_by_command(command)}.'
+#         response['response']['end_session'] = True
+#         return make_response(response, 200)
+#
+#     # обработка несуществующей команды
+#     response['response']['buttons'] = get_suggests()
+#     response['response']['text'] = 'Не могу понять. Владик помоги!'
+#     return make_response(response, 200)
 
 
 # Авторизация Яндекс Диалоги
 
 
-@app.get("/authorization-code")
-def smart_home_authorization_code():
-    """Получение авторизационного кода"""
-
-    client = Client.query.filter_by(id=request.args.get('client_id')).first()
+@app.get("/authorization-grant")
+def smart_home_authorization_grant():
+    """Получение прав"""
 
     data = {**request.args.to_dict()}
 
+    client = Client.query.filter_by(id=request.args.get('client_id')).first()
     if client is not None:
         data['client_title'] = client.title
 
-    return render_template('authorization-code.html', **data)
+    return render_template('authorization-grant.html', **data)
 
 
-@app.post("/authorization-code-grant")
-def smart_home_get_authorization_code_grant():
-    """Генерация кода авторизации"""
+@app.post("/authorization-grant")
+def smart_home_create_authorization_grant():
+    """Создание прав"""
 
     user = User.query.filter_by(email=request.json['email']).first()
 
@@ -220,7 +219,7 @@ def smart_home_refresh_token():
 # Методы умного дома
 
 
-@app.get("/smart-home/v1.0")
+@app.get("/v1.0")
 @authenticate_user
 def smart_home_check(user):
     """Проверка доступности"""
@@ -228,7 +227,7 @@ def smart_home_check(user):
     return make_response({}, 200)
 
 
-@app.post("/smart-home/v1.0/user/unlink")
+@app.post("/v1.0/user/unlink")
 @authenticate_user
 def smart_home_user_unlink(user):
     """Разъединение аккаунтов"""
@@ -244,7 +243,7 @@ def smart_home_user_unlink(user):
     return make_response({"request_id": request_id}, 200)
 
 
-@app.get("/smart-home/v1.0/user/devices")
+@app.get("/v1.0/user/devices")
 @authenticate_user
 def smart_home_get_user_devices(user):
     """Получение устройств пользователя"""
@@ -288,7 +287,7 @@ def smart_home_get_user_devices(user):
     return make_response(body, 200)
 
 
-@app.post("/smart-home/v1.0/user/devices/query")
+@app.post("/v1.0/user/devices/query")
 @authenticate_user
 def smart_home_user_devices_query(user):
     """Действия с устройствами"""
