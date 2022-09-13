@@ -133,6 +133,8 @@ def smart_home_authorization_grant():
 def smart_home_create_authorization_grant():
     """Создание прав"""
 
+    print('--> authorization-grant request json -->', request.json)
+
     user = User.query.filter_by(email=request.json['email']).first()
 
     if user is None:
@@ -154,12 +156,18 @@ def smart_home_create_authorization_grant():
     db.session.add(authorization_code)
     db.session.commit()
 
-    return jsonify({"code": authorization_grant.authorization_code.code})
+    response = {"code": authorization_grant.authorization_code.code}
+
+    print('--> authorization-grant response json -->', response)
+
+    return jsonify(response)
 
 
 @app.post("/token")
 def smart_home_get_token():
     """Получение токенов по коду авторизации"""
+
+    print('--> token request form -->', dict(request.form))
 
     if request.form.get('client_secret') != YANDEX_CLIENT_SECRET:
         return jsonify({'error': "Секрет приложения неверный"}), 400
@@ -181,7 +189,7 @@ def smart_home_get_token():
         "refresh_token": token.refresh_token,
     }
 
-    print('--> token response -->', response)
+    print('--> token response json -->', response)
 
     return jsonify(response)
 
@@ -189,6 +197,8 @@ def smart_home_get_token():
 @app.post("/refresh-token")
 def smart_home_refresh_token():
     """Обновление и выдача новых токенов"""
+
+    print('--> refresh-token request form -->', dict(request.form))
 
     if request.form.get('client_secret') != YANDEX_CLIENT_SECRET:
         return jsonify({'error': "Секрет приложения неверный"}), 400
@@ -211,7 +221,7 @@ def smart_home_refresh_token():
         "refresh_token": new_token.refresh_token,
     }
 
-    print('--> refresh-token response -->', response)
+    print('--> refresh-token response json -->', response)
 
     return jsonify(response)
 
@@ -219,28 +229,28 @@ def smart_home_refresh_token():
 # Методы умного дома
 
 
-@app.get("/v1.0")
-@authenticate_user
-def smart_home_check(user):
-    """Проверка доступности"""
+# @app.get("/v1.0")
+# @authenticate_user
+# def smart_home_check(user):
+#     """Проверка доступности"""
+#
+#     return make_response({}, 200)
 
-    return make_response({}, 200)
 
-
-@app.post("/v1.0/user/unlink")
-@authenticate_user
-def smart_home_user_unlink(user):
-    """Разъединение аккаунтов"""
-
-    headers = request.headers
-    request_id = headers.get('X-Request-Id')
-
-    if request_id is None:
-        return make_response({"error": "Отсутствует request_id в заголовке запроса"}, 404)
-
-    # TODO: Удалять все токены и связь AuthorizationGrant
-
-    return make_response({"request_id": request_id}, 200)
+# @app.post("/v1.0/user/unlink")
+# @authenticate_user
+# def smart_home_user_unlink(user):
+#     """Разъединение аккаунтов"""
+#
+#     headers = request.headers
+#     request_id = headers.get('X-Request-Id')
+#
+#     if request_id is None:
+#         return make_response({"error": "Отсутствует request_id в заголовке запроса"}, 404)
+#
+#     # TODO: Удалять все токены и связь AuthorizationGrant
+#
+#     return make_response({"request_id": request_id}, 200)
 
 
 @app.get("/v1.0/user/devices")
@@ -287,9 +297,9 @@ def smart_home_get_user_devices(user):
     return make_response(body, 200)
 
 
-@app.post("/v1.0/user/devices/query")
-@authenticate_user
-def smart_home_user_devices_query(user):
-    """Действия с устройствами"""
-
-    return make_response({}, 200)
+# @app.post("/v1.0/user/devices/query")
+# @authenticate_user
+# def smart_home_user_devices_query(user):
+#     """Информация об устройствах"""
+#
+#     return make_response({}, 200)
