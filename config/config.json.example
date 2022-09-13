@@ -5,7 +5,7 @@
   "MQTT_PASSWORD": "adminpsw",
   "MQTT_TOPIC": "FFF4/7C9EBD4579D07C9EBD4579D0/api/v1",
   "TOKEN_TYPE": "bearer",
-  "TOKEN_EXPIRES_IS_SECONDS": 60,
+  "TOKEN_EXPIRES_IS_SECONDS": 180,
   "DATABASE_PATH": "./db.sqlite3",
   "YANDEX_CLIENT_SECRET": "quooseequ3gey2vi0miPh2eimieyaine"
 }
